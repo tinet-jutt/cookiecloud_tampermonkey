@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CookieCloud
 // @namespace    http://tampermonkey.net/
-// @version      v0.16
+// @version      v0.17
 // @description  CookieCloud的tampermonkey版本，目前仅支持上传cookie，兼容移动端gear浏览器；
 // @author       tomato
 // @icon         https://store-images.s-microsoft.com/image/apps.63473.a0ccb631-d5e7-422b-bcc7-c0405274114b.be044f83-1292-4e84-a65d-e0527d895863.05fc1666-519a-4d36-8b67-8110c70b45cc?mode=scale&h=64&q=90&w=64
