@@ -1,0 +1,1 @@
+cookiecloud的Tampermonkey版本，兼容移动端gear浏览器；
