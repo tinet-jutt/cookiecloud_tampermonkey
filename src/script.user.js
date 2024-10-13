@@ -26,6 +26,7 @@
     'use strict';
 
     const configStoreKey = '_cookieCloudConfig';
+    const positionKey = '__cookieCloudPositionTop';
     const zIndexNum = Number.MAX_SAFE_INTEGER;
     const themeColor = '236, 97, 91';
 
@@ -41,11 +42,71 @@
         return ele;
     }
 
+    function initDrage(draggable, target) {
+        let offsetX, offsetY, isDragging = false;
+
+        // 开始拖拽
+        function startDrag(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            isDragging = true;
+            if (event.type === 'mousedown') {
+                offsetX = event.clientX - draggable.getBoundingClientRect().left;
+                offsetY = event.clientY - draggable.getBoundingClientRect().top;
+            } else if (event.type === 'touchstart') {
+                const touch = event.touches[0];
+                offsetX = touch.clientX - draggable.getBoundingClientRect().left;
+                offsetY = touch.clientY - draggable.getBoundingClientRect().top;
+            }
+
+            document.addEventListener('mousemove', onDrag);
+            document.addEventListener('touchmove', onDrag);
+        }
+
+        // 拖拽中
+        function onDrag(event) {
+            if (!isDragging) return;
+            let clientX, clientY;
+            if (event.type === 'mousemove') {
+                clientX = event.clientX;
+                clientY = event.clientY;
+            } else if (event.type === 'touchmove') {
+                const touch = event.touches[0];
+                clientX = touch.clientX;
+                clientY = touch.clientY;
+            }
+
+            const newY = clientY - offsetY;
+            draggable.style.top = `${Math.max(18, Math.min(window.innerHeight - draggable.offsetHeight, newY))}px`;
+            storePosition(draggable.style.top);
+            // 固定左边
+            draggable.style.left = '0px';
+        }
+
+        function storePosition(top) {
+            GM_setValue(positionKey, top);
+        }
+
+        // 结束拖拽
+        function endDrag() {
+            isDragging = false;
+            document.removeEventListener('mousemove', onDrag);
+            document.removeEventListener('touchmove', onDrag);
+        }
+
+        // 监听事件
+        target.addEventListener('mousedown', startDrag);
+        target.addEventListener('touchstart', startDrag);
+        document.addEventListener('mouseup', endDrag);
+        document.addEventListener('touchend', endDrag);
+    }
+
     async function init() {
+        const top = GM_getValue(positionKey);
         const btnContainer = createEle('section', {
             style: {
                 position: 'fixed',
-                top: '200px',
+                top,
                 left: '0px',
                 background: color(0.6),
                 borderRadius: '0 20px 20px 0',
@@ -70,7 +131,11 @@
         });
         const asyncConfigBtn = createEle('button', {
             style: btnStyles,
-            innerHTML: '配置'
+            innerHTML: '配置',
+            onclick: function() {
+                const modal = initConfigForm();
+                document.body.appendChild(modal);
+            }
         });
         const moveBtn = createEle('button', {
             style: {
@@ -95,67 +160,8 @@
         btnContainer.appendChild(asyncConfigBtn);
         btnContainer.appendChild(moveBtn);
         document.body.appendChild(btnContainer);
-        initDrage(btnContainer);
-
-        function initDrage(draggable) {
-            let offsetX, offsetY, isDragging = false;
-
-            // 开始拖拽
-            function startDrag(event) {
-                event.preventDefault();
-                event.stopPropagation();
-                isDragging = true;
-                if (event.type === 'mousedown') {
-                    offsetX = event.clientX - draggable.getBoundingClientRect().left;
-                    offsetY = event.clientY - draggable.getBoundingClientRect().top;
-                } else if (event.type === 'touchstart') {
-                    const touch = event.touches[0];
-                    offsetX = touch.clientX - draggable.getBoundingClientRect().left;
-                    offsetY = touch.clientY - draggable.getBoundingClientRect().top;
-                }
-
-                document.addEventListener('mousemove', onDrag);
-                document.addEventListener('touchmove', onDrag);
-            }
-
-            // 拖拽中
-            function onDrag(event) {
-                if (!isDragging) return;
-                let clientX, clientY;
-                if (event.type === 'mousemove') {
-                    clientX = event.clientX;
-                    clientY = event.clientY;
-                } else if (event.type === 'touchmove') {
-                    const touch = event.touches[0];
-                    clientX = touch.clientX;
-                    clientY = touch.clientY;
-                }
-
-                const newY = clientY - offsetY;
-                draggable.style.top = `${Math.max(18, Math.min(window.innerHeight - draggable.offsetHeight, newY))}px`;
-
-                // 固定左边
-                draggable.style.left = '0px';
-            }
-
-            // 结束拖拽
-            function endDrag() {
-                isDragging = false;
-                document.removeEventListener('mousemove', onDrag);
-                document.removeEventListener('touchmove', onDrag);
-            }
-
-            // 监听事件
-            moveBtn.addEventListener('mousedown', startDrag);
-            moveBtn.addEventListener('touchstart', startDrag);
-            document.addEventListener('mouseup', endDrag);
-            document.addEventListener('touchend', endDrag);
-        }
-
-        asyncConfigBtn.onclick = function() {
-            const modal = initConfigForm();
-            document.body.appendChild(modal);
-        }
+        initDrage(btnContainer, moveBtn);
+        
         // 为按钮添加点击事件
         asyncBtn.onclick = async function(event) {
             event.stopPropagation();
